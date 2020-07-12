@@ -1,0 +1,88 @@
+d3.json("https://cdn.freecodecamp.org/testable-projects-fcc/data/tree_map/movie-data.json",function(error,data){
+     if (error) throw error;
+ const w = 1000;
+ const h = 1200; 
+ const padding = 60;
+ const tooltip = d3.select("body")
+  .append("div")
+  .attr("class", "tooltip")
+   .style("opacity","0.8")
+   .style("padding","12px")
+    .style("height", "50px")
+   .style("font-family", "Arial")
+    .style("font-size", "13px")
+    .style("background-color", "#b9b8b8")
+   .style("border-radius","5px")
+   .style("text-align","center")
+   .style("position","absolute")
+  .style("visibility", "hidden"); 
+  const svg = d3.select("body")
+                  .append("svg")
+                  .attr("width", w)
+                  .attr("height", h); 
+   const color = d3.scaleOrdinal(d3.schemeCategory10)
+   const treemap = d3.treemap()
+  .size([w, h])
+    .paddingInner(1);
+  const root = d3.hierarchy(data)
+  root.sum(d => d.value)
+  root.sort((a, b) => b.height - a.height || b.value - a.value)
+  treemap(root)
+  const cell =  svg.selectAll("g")
+       .data(root.leaves())
+       .enter()
+       .append("g")
+       .attr("transform", d => `translate(${d.x0}, ${d.y0})`)
+       cell.append("rect")
+      .attr("class","tile")
+      .attr("width",d => d.x1 - d.x0)
+      .attr("height",d => d.y1 - d.y0)
+      .attr("data-name",d =>d.data.name)
+      .attr("data-value",d =>d.data.value)
+      .attr("data-category",d => d.data.category)
+      .attr('fill', d => color(d.data.category))
+  .on("mouseover", (d) =>{  
+tooltip.style("visibility","visible")
+      .html("Name: " + d.data.name + "<br>" +"Category: "+ d.data.category + "<br>"+ "Value: " + d.data.value)
+          .style("left", (d3.event.pageX + 10) + "px")
+        .style("top", (d3.event.pageY + 10) + "px")
+      })
+    
+  .on("mouseout",(d, i)=>{
+    tooltip.style("visibility","hidden");
+  });
+ 
+ cell.append("text")
+    .attr("class", "text")
+    .selectAll("tspan")
+    .data(d => d.data.name.split(" "))
+    .enter().append("tspan")
+    .attr("x", 4)
+    .attr("y",(d, i) => 13 + i * 10)
+    .text(d => d)  
+    .attr("font-size","10px")
+  
+  let legend  = d3.select("body")
+  .append("svg")
+   .attr("height", 300)
+  .attr("width",1000)
+  .attr("id","legend")
+  .selectAll("rect")
+  .data(data.children.map(d => d.name))
+  .enter()
+  .append("g")
+    .attr("transform", (d, i)=> "translate( " + i * 55 + " , 5 )")
+       legend.append("rect")
+    .attr("x", 5)
+    .attr("y", 0 )
+    .attr("width", 15)
+    .attr("height", 15)
+    .attr("fill", (d, i) => color(d))
+
+  legend.append("text")
+    .attr("x", 0)
+    .attr("y", 30)
+    .attr("class", "legend-text")
+    .text(d => d)
+    .attr("font-size","10px")
+})
